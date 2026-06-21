@@ -1,5 +1,13 @@
 # SQL Query Performance Analyzer
 
+[![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Maven](https://img.shields.io/badge/Build-Maven-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Tests](https://img.shields.io/badge/tests-35%20passing-brightgreen?logo=junit5&logoColor=white)](#testing-strategy)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A PostgreSQL query performance analysis tool that detects slow queries, collects execution plans, identifies common bottlenecks, and generates optimization reports.
 
 This project is designed to demonstrate practical backend engineering, SQL performance tuning, PostgreSQL internals, query plan analysis, and database observability — implemented as a Java/Spring Boot CLI application.
@@ -98,6 +106,8 @@ This tool can answer questions such as:
 
 ## Architecture
 
+The codebase is organized as a small pipeline of single-responsibility layers, each its own Java package, wired together with Spring's dependency injection rather than manual `new`-ing or a service locator:
+
 ```text
 +----------------------+
 | CLI (Spring Boot)    |
@@ -142,6 +152,15 @@ This tool can answer questions such as:
 | before/after compare  |
 +----------------------+
 ```
+
+### Design decisions worth calling out
+
+* **Pluggable detectors (strategy pattern).** Each bottleneck check (`SeqScanDetector`, `JoinDetector`, `SortDetector`, `RowEstimationDetector`, `HighCostNodeDetector`) implements a single `PlanDetector` interface and is a Spring `@Component`. `DetectorChain` collects every implementation through a constructor-injected `List<PlanDetector>` — adding a new detector is a new class with no registry or switch statement to edit.
+* **Immutable domain model.** `PlanNode`, `Finding`, `IndexRecommendation`, `QueryStat`, and `AnalysisResult` are all Java `record`s. The plan tree (`PlanNode`) is a recursive, structurally-shared, side-effect-free value object, which makes the detectors and recommender pure functions over data — easy to unit test with hand-built trees and no mocking.
+* **Heuristic recommender, not a SQL parser.** `IndexCandidateExtractor` deliberately uses targeted regular expressions over `EXPLAIN` filter/join/sort text instead of building a SQL AST. This keeps the recommendation logic small and inspectable, at the explicit cost of missing multi-predicate composite indexes — a tradeoff documented in [Non-Goals](#non-goals) rather than hidden.
+* **Config-as-CLI-arguments.** `AnalyzerProperties` is the single source of truth for every tunable (thresholds, output format, database URL), bound from `application.yml`. Spring adds command-line arguments to the `Environment` *before* beans are constructed, so `--analysis.limit=50` overrides the YAML default with zero custom argument-parsing code.
+* **Fail-soft per query, not per run.** `pg_stat_statements` normalizes literals to `$1`, `$2`, ... placeholders, which `EXPLAIN` cannot bind. `AnalyzeCommand` catches that specific failure per query and records it as a `Finding` instead of aborting the whole batch — one unexplainable query doesn't take down a 50-query report.
+* **Translation boundary for the legacy connection string.** `DatabaseUrlParser` is the one place that understands the `postgres://user:pass@host:port/db` URL shape, isolating that parsing from both the JDBC/Hikari layer and the rest of the app.
 
 ## How It Works
 
@@ -402,6 +421,29 @@ Important: recommendations are candidates, not automatic changes. Indexes should
 
 **Integration tests** (Testcontainers, real PostgreSQL, run via `mvn verify`): query collection, `EXPLAIN`/`EXPLAIN ANALYZE` against real plans, existing-index inspection, and the full `analyze` pipeline end-to-end. All integration test classes share a single Testcontainers Postgres instance (`com.sqlanalyzer.testsupport.AbstractIntegrationTest`) configured with `shared_preload_libraries=pg_stat_statements`.
 
+### Test Results
+
+```text
+$ mvn verify
+
+Unit tests (mvn test)
+  Tests run: 28, Failures: 0, Errors: 0, Skipped: 0
+
+Integration tests (Testcontainers PostgreSQL, mvn verify)
+  Tests run: 7,  Failures: 0, Errors: 0, Skipped: 0
+
+Total: 35 tests, 100% passing
+BUILD SUCCESS
+```
+
+| Layer | Coverage |
+| --- | --- |
+| `explain` | JSON plan parsing — flat nodes, nested children, sort keys, real `EXPLAIN ANALYZE` output |
+| `detector` | One test class per detector: seq scan, joins, sort, row-estimation mismatch, high-cost nodes |
+| `index` | Candidate extraction (filter/join/order-by columns), recommendation dedup against existing indexes |
+| `report` | Markdown/JSON rendering, before/after plan comparison deltas |
+| `collector` / `cli` | Real `pg_stat_statements` collection and the full `analyze` pipeline against a live, Testcontainers-managed PostgreSQL 16 instance |
+
 ### Demo Workloads
 
 The demo schema (`seed/seed.sql`, `examples/slow_queries.sql`) includes intentionally slow query patterns:
@@ -411,16 +453,6 @@ The demo schema (`seed/seed.sql`, `examples/slow_queries.sql`) includes intentio
 * expensive `ORDER BY` without a supporting index
 * inefficient hash join across two unindexed foreign keys
 * a high-frequency, low-latency query (demonstrates total-time vs mean-time ranking)
-
-## Roadmap
-
-All phases below are implemented:
-
-* [x] **Phase 1 — Basic Collector**: connect to PostgreSQL, collect from `pg_stat_statements`, sort/filter, export raw stats
-* [x] **Phase 2 — Plan Analyzer**: `EXPLAIN (FORMAT JSON)`, plan node parsing, scan/join/sort/row-estimation detectors
-* [x] **Phase 3 — Recommendation Engine**: existing-index inspection, candidate indexes, confidence levels, risk notes
-* [x] **Phase 4 — Reports**: Markdown + JSON reports, before/after comparison
-* [x] **Phase 5 — Polish**: Docker Compose demo, integration tests, sample reports
 
 ## What This Project Demonstrates
 

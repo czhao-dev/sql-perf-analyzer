@@ -1,0 +1,60 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Hash Join",
+      "Join Type": "Inner",
+      "Hash Cond": "(orders.product_id = products.id)",
+      "Startup Cost": 25.50,
+      "Total Cost": 45820.75,
+      "Plan Rows": 100000,
+      "Plan Width": 80,
+      "Actual Startup Time": 1.2,
+      "Actual Total Time": 980.5,
+      "Actual Rows": 98000,
+      "Actual Loops": 1,
+      "Plans": [
+        {
+          "Node Type": "Seq Scan",
+          "Relation Name": "orders",
+          "Alias": "orders",
+          "Startup Cost": 0.00,
+          "Total Cost": 2204.00,
+          "Plan Rows": 100000,
+          "Plan Width": 48,
+          "Actual Startup Time": 0.01,
+          "Actual Total Time": 25.4,
+          "Actual Rows": 100000,
+          "Actual Loops": 1
+        },
+        {
+          "Node Type": "Hash",
+          "Startup Cost": 25.00,
+          "Total Cost": 25.00,
+          "Plan Rows": 200,
+          "Plan Width": 32,
+          "Actual Startup Time": 0.5,
+          "Actual Total Time": 0.5,
+          "Actual Rows": 200,
+          "Actual Loops": 1,
+          "Plans": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "products",
+              "Alias": "products",
+              "Startup Cost": 0.00,
+              "Total Cost": 25.00,
+              "Plan Rows": 200,
+              "Plan Width": 32,
+              "Actual Startup Time": 0.01,
+              "Actual Total Time": 0.3,
+              "Actual Rows": 200,
+              "Actual Loops": 1
+            }
+          ]
+        }
+      ]
+    },
+    "Planning Time": 0.15,
+    "Execution Time": 985.3
+  }
+]

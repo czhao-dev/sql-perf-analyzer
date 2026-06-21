@@ -1,0 +1,170 @@
+[
+  {
+    "queryStat": {
+      "queryId": 3608032995673526740,
+      "query": "SELECT c.name, COUNT(*) AS event_count\nFROM customers c\nJOIN events e ON e.customer_id = c.id\nGROUP BY c.name",
+      "calls": 10,
+      "totalExecTimeMs": 22.625834,
+      "meanExecTimeMs": 2.2625834,
+      "maxExecTimeMs": 2.4066259999999997,
+      "rows": 30
+    },
+    "explainPlan": {
+      "root": {
+        "nodeType": "Aggregate",
+        "relationName": null,
+        "alias": null,
+        "indexName": null,
+        "startupCost": 641.74,
+        "totalCost": 641.77,
+        "planRows": 3,
+        "planWidth": 20,
+        "actualRows": null,
+        "actualLoops": null,
+        "actualStartupTimeMs": null,
+        "actualTotalTimeMs": null,
+        "joinType": null,
+        "sortKey": [],
+        "filter": null,
+        "hashCond": null,
+        "mergeCond": null,
+        "indexCond": null,
+        "children": [
+          {
+            "nodeType": "Hash Join",
+            "relationName": null,
+            "alias": null,
+            "indexName": null,
+            "startupCost": 1.07,
+            "totalCost": 541.74,
+            "planRows": 20000,
+            "planWidth": 12,
+            "actualRows": null,
+            "actualLoops": null,
+            "actualStartupTimeMs": null,
+            "actualTotalTimeMs": null,
+            "joinType": "Inner",
+            "sortKey": [],
+            "filter": null,
+            "hashCond": "(e.customer_id = c.id)",
+            "mergeCond": null,
+            "indexCond": null,
+            "children": [
+              {
+                "nodeType": "Seq Scan",
+                "relationName": "events",
+                "alias": "e",
+                "indexName": null,
+                "startupCost": 0.0,
+                "totalCost": 414.0,
+                "planRows": 20000,
+                "planWidth": 8,
+                "actualRows": null,
+                "actualLoops": null,
+                "actualStartupTimeMs": null,
+                "actualTotalTimeMs": null,
+                "joinType": null,
+                "sortKey": [],
+                "filter": null,
+                "hashCond": null,
+                "mergeCond": null,
+                "indexCond": null,
+                "children": []
+              },
+              {
+                "nodeType": "Hash",
+                "relationName": null,
+                "alias": null,
+                "indexName": null,
+                "startupCost": 1.03,
+                "totalCost": 1.03,
+                "planRows": 3,
+                "planWidth": 20,
+                "actualRows": null,
+                "actualLoops": null,
+                "actualStartupTimeMs": null,
+                "actualTotalTimeMs": null,
+                "joinType": null,
+                "sortKey": [],
+                "filter": null,
+                "hashCond": null,
+                "mergeCond": null,
+                "indexCond": null,
+                "children": [
+                  {
+                    "nodeType": "Seq Scan",
+                    "relationName": "customers",
+                    "alias": "c",
+                    "indexName": null,
+                    "startupCost": 0.0,
+                    "totalCost": 1.03,
+                    "planRows": 3,
+                    "planWidth": 20,
+                    "actualRows": null,
+                    "actualLoops": null,
+                    "actualStartupTimeMs": null,
+                    "actualTotalTimeMs": null,
+                    "joinType": null,
+                    "sortKey": [],
+                    "filter": null,
+                    "hashCond": null,
+                    "mergeCond": null,
+                    "indexCond": null,
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "planningTimeMs": null,
+      "executionTimeMs": null,
+      "rawJson": "[\n  {\n    \"Plan\": {\n      \"Node Type\": \"Aggregate\",\n      \"Strategy\": \"Hashed\",\n      \"Partial Mode\": \"Simple\",\n      \"Parallel Aware\": false,\n      \"Async Capable\": false,\n      \"Startup Cost\": 641.74,\n      \"Total Cost\": 641.77,\n      \"Plan Rows\": 3,\n      \"Plan Width\": 20,\n      \"Group Key\": [\"c.name\"],\n      \"Planned Partitions\": 0,\n      \"Plans\": [\n        {\n          \"Node Type\": \"Hash Join\",\n          \"Parent Relationship\": \"Outer\",\n          \"Parallel Aware\": false,\n          \"Async Capable\": false,\n          \"Join Type\": \"Inner\",\n          \"Startup Cost\": 1.07,\n          \"Total Cost\": 541.74,\n          \"Plan Rows\": 20000,\n          \"Plan Width\": 12,\n          \"Inner Unique\": true,\n          \"Hash Cond\": \"(e.customer_id = c.id)\",\n          \"Plans\": [\n            {\n              \"Node Type\": \"Seq Scan\",\n              \"Parent Relationship\": \"Outer\",\n              \"Parallel Aware\": false,\n              \"Async Capable\": false,\n              \"Relation Name\": \"events\",\n              \"Alias\": \"e\",\n              \"Startup Cost\": 0.00,\n              \"Total Cost\": 414.00,\n              \"Plan Rows\": 20000,\n              \"Plan Width\": 8\n            },\n            {\n              \"Node Type\": \"Hash\",\n              \"Parent Relationship\": \"Inner\",\n              \"Parallel Aware\": false,\n              \"Async Capable\": false,\n              \"Startup Cost\": 1.03,\n              \"Total Cost\": 1.03,\n              \"Plan Rows\": 3,\n              \"Plan Width\": 20,\n              \"Plans\": [\n                {\n                  \"Node Type\": \"Seq Scan\",\n                  \"Parent Relationship\": \"Outer\",\n                  \"Parallel Aware\": false,\n                  \"Async Capable\": false,\n                  \"Relation Name\": \"customers\",\n                  \"Alias\": \"c\",\n                  \"Startup Cost\": 0.00,\n                  \"Total Cost\": 1.03,\n                  \"Plan Rows\": 3,\n                  \"Plan Width\": 20\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    }\n  }\n]"
+    },
+    "findings": [
+      {
+        "category": "SEQ_SCAN",
+        "severity": "WARNING",
+        "message": "Large sequential scan detected on events (20000 rows)",
+        "relatedNodeType": "Seq Scan",
+        "relatedRelation": "events"
+      },
+      {
+        "category": "HASH_JOIN",
+        "severity": "INFO",
+        "message": "Hash join detected on (e.customer_id = c.id)",
+        "relatedNodeType": "Hash Join",
+        "relatedRelation": null
+      }
+    ],
+    "recommendations": [
+      {
+        "table": "e",
+        "columns": [
+          "customer_id"
+        ],
+        "ddl": "CREATE INDEX idx_e_customer_id ON e (customer_id);",
+        "reasoning": "Join column \"customer_id\" used in Hash Join ((e.customer_id = c.id))",
+        "riskNote": "Indexes improve reads but add write overhead; validate with EXPLAIN ANALYZE before applying in production.",
+        "confidence": "HIGH",
+        "kind": "JOIN"
+      },
+      {
+        "table": "c",
+        "columns": [
+          "id"
+        ],
+        "ddl": "CREATE INDEX idx_c_id ON c (id);",
+        "reasoning": "Join column \"id\" used in Hash Join ((e.customer_id = c.id))",
+        "riskNote": "Indexes improve reads but add write overhead; validate with EXPLAIN ANALYZE before applying in production.",
+        "confidence": "HIGH",
+        "kind": "JOIN"
+      }
+    ],
+    "riskNotes": [
+      "Indexes improve reads but add write overhead.",
+      "Validate with EXPLAIN ANALYZE before applying in production."
+    ]
+  }
+]

@@ -1,0 +1,27 @@
+spring:
+  main:
+    banner-mode: "off"
+  flyway:
+    locations: classpath:db/migration
+
+database:
+  url: "postgres://postgres:postgres@localhost:5432/demo?sslmode=disable"
+  statement-timeout: "5s"
+
+analysis:
+  query-source: "pg_stat_statements"
+  min-mean-time: "50ms"
+  min-calls: 5
+  limit: 20
+  run-explain-analyze: false
+  detect-row-estimation-error: true
+  row-estimation-error-threshold: 10.0
+
+recommendations:
+  suggest-indexes: true
+  check-existing-indexes: true
+  include-risk-notes: true
+
+report:
+  format: "markdown"
+  output: "report.md"

@@ -157,7 +157,7 @@ The codebase is organized as a small pipeline of single-responsibility layers, e
 
 * **Pluggable detectors (strategy pattern).** Each bottleneck check (`SeqScanDetector`, `JoinDetector`, `SortDetector`, `RowEstimationDetector`, `HighCostNodeDetector`) implements a single `PlanDetector` interface and is a Spring `@Component`. `DetectorChain` collects every implementation through a constructor-injected `List<PlanDetector>` — adding a new detector is a new class with no registry or switch statement to edit.
 * **Immutable domain model.** `PlanNode`, `Finding`, `IndexRecommendation`, `QueryStat`, and `AnalysisResult` are all Java `record`s. The plan tree (`PlanNode`) is a recursive, structurally-shared, side-effect-free value object, which makes the detectors and recommender pure functions over data — easy to unit test with hand-built trees and no mocking.
-* **Heuristic recommender, not a SQL parser.** `IndexCandidateExtractor` deliberately uses targeted regular expressions over `EXPLAIN` filter/join/sort text instead of building a SQL AST. This keeps the recommendation logic small and inspectable, at the explicit cost of missing multi-predicate composite indexes — a tradeoff documented in [Non-Goals](#non-goals) rather than hidden.
+* **Heuristic recommender, not a SQL parser.** `IndexCandidateExtractor` deliberately uses targeted regular expressions over `EXPLAIN` filter/join/sort text instead of building a SQL AST. This keeps the recommendation logic small and inspectable, at the explicit cost of missing multi-predicate composite indexes — a deliberate tradeoff kept explicit rather than hidden.
 * **Config-as-CLI-arguments.** `AnalyzerProperties` is the single source of truth for every tunable (thresholds, output format, database URL), bound from `application.yml`. Spring adds command-line arguments to the `Environment` *before* beans are constructed, so `--analysis.limit=50` overrides the YAML default with zero custom argument-parsing code.
 * **Fail-soft per query, not per run.** `pg_stat_statements` normalizes literals to `$1`, `$2`, ... placeholders, which `EXPLAIN` cannot bind. `AnalyzeCommand` catches that specific failure per query and records it as a `Finding` instead of aborting the whole batch — one unexplainable query doesn't take down a 50-query report.
 * **Translation boundary for the legacy connection string.** `DatabaseUrlParser` is the one place that understands the `postgres://user:pass@host:port/db` URL shape, isolating that parsing from both the JDBC/Hikari layer and the rest of the app.
@@ -466,18 +466,17 @@ The demo schema (`seed/seed.sql`, `examples/slow_queries.sql`) includes intentio
 * integration testing with Testcontainers and Docker
 * performance-focused engineering
 
-## Non-Goals
+## References
 
-This project does not aim to be a full database monitoring platform.
-
-Non-goals:
-
-* automatic query rewriting
-* automatic index creation in production
-* support for every SQL dialect
-* complete PostgreSQL planner emulation
-* replacing commercial APM/database tools
-* making production changes without human review
+* [PostgreSQL EXPLAIN documentation](https://www.postgresql.org/docs/current/sql-explain.html)
+* [PostgreSQL `pg_stat_statements` module](https://www.postgresql.org/docs/current/pgstatstatements.html)
+* [PostgreSQL query planning overview](https://www.postgresql.org/docs/current/planner-optimizer.html)
+* [PostgreSQL `pg_indexes` system catalog](https://www.postgresql.org/docs/current/view-pg-indexes.html)
+* [Using EXPLAIN — PostgreSQL wiki](https://wiki.postgresql.org/wiki/Using_EXPLAIN)
+* [Slow Query Questions — PostgreSQL wiki](https://wiki.postgresql.org/wiki/Slow_Query_Questions)
+* [Testcontainers for Java](https://java.testcontainers.org/)
+* [Spring Boot CLI documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/)
+* [Flyway database migrations](https://flywaydb.org/documentation/)
 
 ## License
 
